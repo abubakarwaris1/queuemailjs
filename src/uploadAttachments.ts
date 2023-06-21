@@ -31,14 +31,12 @@ export const uploadAttachments = async (attachments: SendMailOptions["attachment
                 params.Body = attachment.raw;
             }
         } else {
-            console.log('in else sendgrid attachment....')
             const content = attachment.content as string;
             const data = Buffer.from(content, 'base64');
             params.Body = data;
         }
 
         try{
-            console.log('in try....')
             const data: SendData = await s3.upload(params).promise();
             let storedAttachment: S3Attachment = { path: data.Location};
             if (attachment.filename) {
@@ -50,7 +48,6 @@ export const uploadAttachments = async (attachments: SendMailOptions["attachment
             if("disposition" in attachment){
                 storedAttachment.disposition = attachment.disposition;
             }
-            console.log('after try....')
             uploadedAttachmentsArray.push(storedAttachment)
         }catch(err:any){
             if (err) {

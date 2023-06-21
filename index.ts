@@ -3,9 +3,9 @@ import {
 } from './types/index';
 import nodemailer,{Transporter, SendMailOptions} from 'nodemailer';
 import AWS, {SQS, S3} from 'aws-sdk';
-import sgMail, { MailService, MailDataRequired } from '@sendgrid/mail';
+import sgMail, { MailDataRequired } from '@sendgrid/mail';
 import axios from 'axios';
-import fs from 'fs';
+import 'dotenv/config'
 
 import { uploadAttachments } from './src/uploadAttachments';
 
@@ -22,7 +22,7 @@ const params = {
     WaitTimeSeconds: 0
 };
 
-const SENDGRID_API_KEY = "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";
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || "";
 sgMail.setApiKey(SENDGRID_API_KEY);
 var credentials = new AWS.SharedIniFileCredentials({profile: 'mohsin'});
 AWS.config.credentials = credentials;
@@ -65,10 +65,8 @@ export class JsClient {
                    sendMailOptions.attachments = uploadedAttachment;
                 }
             } else {
-                console.log('in else')
                 if(sendMailOptions.attachments){
                     const uploadedAttachment =await uploadAttachments(sendMailOptions.attachments, this.s3, this.bucketName, 'Sendgrid');
-                    console.log('after attach',uploadedAttachment)
                     sendMailOptions.attachments = uploadedAttachment;
                 }
             }
@@ -94,7 +92,6 @@ export class JsClient {
     }
 
     private receiveMessage() {
-        console.log('in recive....')
         this.sqs.receiveMessage({...params, QueueUrl: this.queueUrl}, async (err:any, result:SQS.ReceiveMessageResult) => {
             const messages = result.Messages;
             if(messages?.length){
@@ -104,14 +101,11 @@ export class JsClient {
                     let body = null;
                     if(message.Body){
                         body = JSON.parse(message.Body);
-                        console.log('disposition', body);
                         if(body.disposition){
-                            console.log('in axios...')
                             const response = await axios.get(body.path,  { responseType: 'arraybuffer' })
                             const buffer = Buffer.from(response.data, "utf-8");
                             body.content = buffer.toString('base64');
                             delete body.path;
-                            console.log('done axios....')
                         }
                     }
                     if(this.transporter){
@@ -128,9 +122,7 @@ export class JsClient {
                             }
                         });
                     } else {
-                        console.log('in sgMail....')
                         const result = await sgMail.send(body);
-                        console.log('result', result)
                     }
                     
 
@@ -154,54 +146,3 @@ export class JsClient {
     }
 
 }
-
-
-const client =  new JsClient({
-    clientType: 'Sendgrid',
-    // nodemailerConfig: {
-    //     host: "smtp.gmail.com",
-    //     port: 587,
-    //     secure: false,
-    //     auth:{
-    //         user: 'abubakar.waris@techverx.com',
-    //         pass: 'M1k2b3t4p5d6@'
-    //     }
-    // },
-    awsConfig:{
-        region: 'ap-northeast-1',
-        sqsQueueUrl: 'https://sqs.ap-northeast-1.amazonaws.com/269446268656/myEmailQueue.fifo',
-        bucketName: 'attachments-store'
-    }
-});
-let path = '../abc.jpg'
-path = path.split(/\ /).join('\ ');
-const attachment = fs.readFileSync(path).toString("base64");
-// for(let i = 10; i <15;i++){
-    client.sendEmail({
-        from:'abubakar.waris@techverx.com',
-        to: 'abubakarwaris@gmail.com',
-        subject:'test email',
-        html: `<b>Hello World</b>`,
-        attachments: [{
-            content:attachment,
-            filename: 'abc.jpg',
-            type:'image/jpg',
-            disposition: 'attachment',
-            // content_id: 'my_text'
-            // path: 'C:/Users/Abu Bakar/Documents/Work/js-email-client/abc.jpg',
-        }]
-    });
-// }
-
-// client.send({
-//     from:'abubakar.waris@techverx.com',
-//     to: 'abubakarwaris@gmail.com',
-//     subject:'test email',
-//     text:' somtehdfsdkasdfsd',
-//     html: `<b>Hello World</b>`,
-//     attachments: [{
-//         filename:'abc.jpg',
-//         path: 'https://attachments-store.s3.ap-northeast-1.amazonaws.com/1672746343467.jpg',
-//         contentType: 'image/jpg'
-//     }]
-// })

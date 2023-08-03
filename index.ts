@@ -3,9 +3,10 @@ import {
 } from './types/index';
 import nodemailer,{Transporter, SendMailOptions} from 'nodemailer';
 import AWS, {SQS, S3} from 'aws-sdk';
-import sgMail, { MailDataRequired } from '@sendgrid/mail';
+import sgMail, { MailDataRequired, ResponseError } from '@sendgrid/mail';
 import axios from 'axios';
-import 'dotenv/config'
+import 'dotenv/config';
+import { AttachmentSendgrid } from "./types/index";
 
 import { uploadAttachments } from './src/uploadAttachments';
 
@@ -24,8 +25,6 @@ const params = {
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || "";
 sgMail.setApiKey(SENDGRID_API_KEY);
-var credentials = new AWS.SharedIniFileCredentials({profile: 'mohsin'});
-AWS.config.credentials = credentials;
 let isConsumerRunning = false;
 
 export class JsClient {
@@ -75,7 +74,7 @@ export class JsClient {
             this.sqs.sendMessage({
                 QueueUrl: this.queueUrl,
                 MessageBody: JSON.stringify(sendMailOptions),
-                MessageGroupId: "1"
+                // MessageGroupId: "1"
             },(err:any, data:any) => {
                 if(err){
                     console.log('Error', err);
@@ -97,6 +96,7 @@ export class JsClient {
             if(messages?.length){
                 for(let i = 0; i< messages.length; i++){
                     const message = messages[i];
+                    // console.log("message====>", message);
                     let deleteHandle = message.ReceiptHandle;
                     let body = null;
                     if(message.Body){
@@ -108,14 +108,23 @@ export class JsClient {
                             delete body.path;
                         }
                     }
+                    if(body?.attachments.length> 0 && body?.attachments[0].filename){
+                        const attachments: AttachmentSendgrid[] = [];
+                        for(const attachment of body.attachments){
+                            const response = await axios(attachment.path,{responseType: "arraybuffer"});
+                            const base64String = Buffer.from(response.data).toString('base64');
+                            attachments.push({content:base64String , filename: attachment.filename, type: attachment.type})
+                        }
+                        body.attachments = attachments;
+                    }
                     if(this.transporter){
                         this.transporter?.sendMail(body, (err,info) =>{
                             if(err){
-                                console.log('err', err);
+                                throw err;
                             } else{
                                 if(deleteHandle){
                                     this.sqs.deleteMessage({QueueUrl: this.queueUrl, ReceiptHandle: deleteHandle}, (err, data) =>{
-                                        console.log('message deleted successfully');
+                                        console.log('Task processed and deleted successfully');
                                     })
                                 }
                                 
@@ -123,6 +132,12 @@ export class JsClient {
                         });
                     } else {
                         const result = await sgMail.send(body);
+                        console.log("result", result);
+                        if(deleteHandle){
+                            this.sqs.deleteMessage({QueueUrl: this.queueUrl, ReceiptHandle: deleteHandle}, (err, data) =>{
+                                console.log('Task processed and deleted successfully');
+                            })
+                        }
                     }
                     
 

@@ -19,25 +19,6 @@ export type Attachment = {
     ContentEncoding ?: string
 }
 
-export interface SendData {
-    /**
-     * URL of the uploaded object.
-     */
-    Location: string;
-    /**
-     * ETag of the uploaded object.
-     */
-    ETag: string;
-    /**
-     * Bucket to which the object was uploaded.
-     */
-    Bucket: string;
-    /**
-     * Key to which the object was uploaded.
-     */
-    Key: string;
-}
-
 export interface S3Attachment {
     filename?: string,
     path?: string,
@@ -52,7 +33,7 @@ export interface AttachmentSendgrid {
     type: string;
     disposition?: string;
     content_id?: string;
-  }
+}
 
 interface AttachmentLike {
     /** String, Buffer or a Stream contents for the attachmentent */

@@ -1,4 +1,3 @@
-import { TransportOptions } from 'nodemailer';
 type clientTypes = 'Nodemailer' | 'Sendgrid';
 type awsConfig = {
     region: string,
@@ -8,7 +7,8 @@ type awsConfig = {
 export type Config = {
     clientType: clientTypes,
     nodemailerConfig?: any,
-    awsConfig: awsConfig
+    awsConfig: awsConfig,
+    sgApiKey?: string,
 }
 
 export type Attachment = {

@@ -1,3 +1,8 @@
+import {SendMailOptions} from 'nodemailer';
+import { MailDataRequired } from '@sendgrid/mail';
+
+export type NodemailerOptions = SendMailOptions;
+export type SendgridOptions = MailDataRequired;
 type clientTypes = 'Nodemailer' | 'Sendgrid';
 type awsConfig = {
     region: string,
@@ -9,6 +14,7 @@ export type Config = {
     nodemailerConfig?: any,
     awsConfig: awsConfig,
     sgApiKey?: string,
+    repeatFrequency?: number
 }
 
 export type Attachment = {

@@ -3,7 +3,7 @@ import nodemailer, { Transporter } from "nodemailer";
 import AWS, { SQS, S3 } from "aws-sdk";
 import sgMail from "@sendgrid/mail";
 import axios from "axios";
-
+import { promisify } from "util";
 import {
   AttachmentSendgrid,
   NodemailerOptions,
@@ -30,6 +30,7 @@ class JsClient {
   private s3: S3;
   private bucketName: string = "";
   private repeatFrequency: number = 5 * 60 * 1000;
+  private interval: NodeJS.Timer | null = null;
   /**
    * Creates a new instance of the JsClient class.
    * @param {Config} config - The configuration object to initialize assets..
@@ -109,10 +110,6 @@ class JsClient {
           if (err) {
             reject(err); // Reject the promise with the error
           } else {
-            if (!isIntervalSet) {
-              isIntervalSet = true;
-              setInterval(this.receiveMessage, this.repeatFrequency);
-            }
             resolve(data); // Resolve the promise with the result
           }
         }
@@ -127,7 +124,9 @@ class JsClient {
    * @private
    */
   private receiveMessage() {
+    console.log("****CONSUMER STARTED****");
     if (isConsumerRunning) {
+      console.log("****SHUTTING DOWN. CONSUMER ALREADY RUNNING****");
       return;
     }
 
@@ -138,9 +137,11 @@ class JsClient {
       async (err: any, result: SQS.ReceiveMessageResult) => {
         // Check if there are any messages to process
         const messages = result.Messages;
+        console.log("**** total messages ****", messages?.length);
         if (messages?.length) {
           // Process each received message
           for (let i = 0; i < messages.length; i++) {
+            console.log("*** processing task at index ***", i);
             const message = messages[i];
             let deleteHandle = message.ReceiptHandle;
             let body = null;
@@ -180,47 +181,83 @@ class JsClient {
               }
               body.attachments = attachments;
             }
-
-            // Send the email using the specified transporter (if available)
-            if (this.transporter) {
-              this.transporter?.sendMail(body, (err, info) => {
-                if (err) {
-                  throw err; // Handle sending error
-                } else {
-                  // Delete the processed message from the queue
-                  if (deleteHandle) {
-                    this.sqs.deleteMessage(
-                      { QueueUrl: this.queueUrl, ReceiptHandle: deleteHandle },
-                      (err, data) => {
-                        console.log("Task processed and deleted successfully");
+            try {
+              if (this.transporter) {
+                // Send the email using the specified transporter (if available)
+                const sendMailAsync = promisify(this.transporter.sendMail).bind(
+                  this.transporter
+                );
+                await sendMailAsync(body);
+              } else {
+                // Send the email using the SendGrid API (if transporter is not available)
+                await sgMail.send(body);
+              }
+              const result = await new Promise((resolve, reject) => {
+                if (deleteHandle) {
+                  this.sqs.deleteMessage(
+                    { QueueUrl: this.queueUrl, ReceiptHandle: deleteHandle },
+                    (err, data) => {
+                      if (err) {
+                        reject(err);
                       }
-                    );
-                  }
+                      // console.log("Task processed and deleted successfully");
+                      resolve("Task processed and deleted successfully");
+                    }
+                  );
                 }
               });
-            } else {
-              // Send the email using the SendGrid API (if transporter is not available)
-              try{
-                const result = await sgMail.send(body);
-              }catch(error){
-                throw error;
-                continue;
-              }
-              // Delete the processed message from the queue
-              if (deleteHandle) {
-                this.sqs.deleteMessage(
-                  { QueueUrl: this.queueUrl, ReceiptHandle: deleteHandle },
-                  (err, data) => {
-                    console.log("Task processed and deleted successfully");
-                  }
-                );
-              }
+              console.log(result);
+            } catch (error) {
+              throw error;
+              continue;
             }
           }
         }
         isConsumerRunning = false;
+        console.log("****CONSUMER COMPLETED****");
       }
     );
+  }
+
+  /**
+   * Start the message consumer to periodically receive messages.
+   */
+  public startConsumer(): void {
+    // Check if the consumer has already been initiated
+    if (!isIntervalSet) {
+      // Mark the consumer as initiated
+      isIntervalSet = true;
+
+      // Set up an interval to call the 'receiveMessage' method at the specified repeat frequency
+      this.interval = setInterval(
+        this.receiveMessage.bind(this),
+        this.repeatFrequency
+      );
+
+      // Log a message indicating successful initiation
+      console.log("****CONSUMER INITIATED****");
+    } else {
+      // Log a message indicating that the consumer is already initiated
+      console.log("****CONSUMER IS ALREADY INITIATED****");
+    }
+  }
+  /**
+   * Stop the message consumer from receiving messages.
+   */
+  public stopConsumer(): void {
+    // Check if the interval is set (i.e., if the consumer is running)
+    if (this.interval) {
+      // Clear the interval to stop the consumer
+      clearInterval(this.interval);
+
+      // Set the interval reference to null, indicating the consumer is stopped
+      this.interval = null;
+      isIntervalSet = false;
+      console.log("****CONSUMER TERMINATED****");
+    } else {
+      // Log a message indicating that there is no consumer running to stop
+      console.log("***NO CONSUMER RUNNING***");
+    }
   }
 }
 

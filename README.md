@@ -98,4 +98,96 @@ The `JsClient` object provides the following methods:
 
 Please refer to the individual method descriptions for more details on their usage and parameters.
 
+## How to Use
+
+### Using Nodemailer to Send an Email with Attachment
+
+```typescript
+import { JsClient, NodemailerOptions } from 'js-email-client';
+
+// Configure the options for the JsClient
+const jsClient = new JsClient({
+  clientType: 'Nodemailer',
+  nodemailerConfig: {
+    // Nodemailer configuration options
+    service: 'Gmail',
+    auth: {
+      user: 'your-email@gmail.com',
+      pass: 'your-email-password',
+    },
+  },
+  awsConfig: {
+    // AWS configuration options for SQS and S3
+    region: 'us-east-1',
+    sqsQueueUrl: 'your-sqs-queue-url',
+    bucketName: 'your-s3-bucket-name',
+  },
+});
+
+// Construct email options with attachment
+const emailOptions: NodemailerOptions = {
+  from: 'your-email@gmail.com',
+  to: 'recipient@example.com',
+  subject: 'Email with Attachment from Nodemailer',
+  text: 'This email contains an attachment.',
+  attachments: [
+    {
+      filename: 'example.txt',
+      content: 'Hello, this is the content of the attachment.',
+    },
+  ],
+};
+
+// Send the email
+jsClient.sendEmail(emailOptions)
+  .then(() => {
+    console.log('Email with attachment sent successfully!');
+  })
+  .catch((error) => {
+    console.error('Error sending email with attachment:', error);
+  });
+```
+
+### Using Sendgrid to Send an Email with Attachment
+
+```typescript
+import { JsClient, SendgridOptions } from 'js-email-client';
+
+// Configure the options for the JsClient
+const jsClient = new JsClient({
+  clientType: 'Sendgrid',
+  sgApiKey: 'your-sendgrid-api-key',
+  awsConfig: {
+    // AWS configuration options for SQS and S3
+    region: 'us-east-1',
+    sqsQueueUrl: 'your-sqs-queue-url',
+    bucketName: 'your-s3-bucket-name',
+  },
+});
+
+// Construct email options with attachment
+const emailOptions: SendgridOptions = {
+  from: 'your-email@example.com',
+  to: 'recipient@example.com',
+  subject: 'Email with Attachment from SendGrid',
+  text: 'This email contains an attachment.',
+  attachments: [
+    {
+      filename: 'example.txt',
+      content: 'Hello, this is the content of the attachment.',
+    },
+  ],
+};
+
+// Send the email
+jsClient.sendEmail(emailOptions)
+  .then(() => {
+    console.log('Email with attachment sent successfully!');
+  })
+  .catch((error) => {
+    console.error('Error sending email with attachment:', error);
+  });
+
+```
+
 

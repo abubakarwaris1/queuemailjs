@@ -103,7 +103,7 @@ Please refer to the individual method descriptions for more details on their usa
 ### Using Nodemailer to Send an Email with Attachment
 
 ```typescript
-import { JsClient, NodemailerOptions } from '';
+import { JsClient, NodemailerOptions } from 'queuemailjs';
 
 // Configure the options for the JsClient
 const jsClient = new JsClient({
@@ -151,7 +151,7 @@ jsClient.sendEmail(emailOptions)
 ### Using Sendgrid to Send an Email with Attachment
 
 ```typescript
-import { JsClient, SendgridOptions } from '';
+import { JsClient, SendgridOptions } from 'queuemailjs';
 
 // Configure the options for the JsClient
 const jsClient = new JsClient({

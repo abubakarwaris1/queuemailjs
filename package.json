@@ -1,15 +1,50 @@
 {
-  "name": "js-email-client",
-  "version": "1.0.0",
-  "description": "",
+  "name": "queuemailjs",
+  "version": "1.0.1",
+  "description": "An NPM package to automate email sending with queuing and fault tolerance.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.ts",
     "build": "tsc"
   },
-  "author": "",
-  "license": "ISC",
+  "author": {
+    "name": "Muhammad Abu Bakar Waris",
+    "url": "https://www.linkedin.com/in/muhammad-abu-bakar-waris/",
+    "email": "abubakarwaris@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abubakarwaris1/queuemailjs"
+  },
+  "keywords": [
+    "email",
+    "queue",
+    "Nodemailer",
+    "Sendgrid",
+    "SQS",
+    "S3",
+    "automation",
+    "email automation",
+    "fault tolerance",
+    "email queue",
+    "email processing",
+    "email management",
+    "AWS",
+    "serverless",
+    "microservices",
+    "backend",
+    "messaging",
+    "notification",
+    "async",
+    "message queue",
+    "email attachments",
+    "S3 storage",
+    "cloud",
+    "aws-sdk",
+    "npm package"
+  ],
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^18.17.1",
     "dotenv": "^16.3.1",

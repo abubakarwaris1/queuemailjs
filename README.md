@@ -1,4 +1,4 @@
-# js-email-client
+# queuemailjs
 Its a Typescript based email client that has built integrated functionality to handle email queus, upload attachments and send emails to clients one by one. It also has fault tolerance capability. The user has to provide the configurations for sqs, s3, Nodemailer and sendgrid.
 
 **NOTE: It is not ready to use at the moment as its in the stage of development. Once the v1.0 is ready, it will be available to use along with the detailed documentation. Please feel free to add suggestions.**
@@ -103,7 +103,7 @@ Please refer to the individual method descriptions for more details on their usa
 ### Using Nodemailer to Send an Email with Attachment
 
 ```typescript
-import { JsClient, NodemailerOptions } from 'js-email-client';
+import { JsClient, NodemailerOptions } from '';
 
 // Configure the options for the JsClient
 const jsClient = new JsClient({
@@ -151,7 +151,7 @@ jsClient.sendEmail(emailOptions)
 ### Using Sendgrid to Send an Email with Attachment
 
 ```typescript
-import { JsClient, SendgridOptions } from 'js-email-client';
+import { JsClient, SendgridOptions } from '';
 
 // Configure the options for the JsClient
 const jsClient = new JsClient({

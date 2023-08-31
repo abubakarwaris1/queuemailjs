@@ -3,4 +3,4 @@ package-lock.json
 .env
 test.ts
 abc.jpg
-./build
+/build
